@@ -1,0 +1,9 @@
+[submodule "lib/mongoose"]
+	path = lib/mongoose
+	url = https://github.com/cesanta/mongoose
+[submodule "lib/RP2040PIO-DS18B20"]
+	path = lib/RP2040PIO-DS18B20
+	url = https://github.com/jondurrant/RP2040PIO-DS18B20
+[submodule "lib/RPIPicoOnboardNVS"]
+	path = lib/RPIPicoOnboardNVS
+	url = https://github.com/jondurrant/RPIPicoOnboardNVS
