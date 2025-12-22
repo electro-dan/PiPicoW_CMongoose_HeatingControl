@@ -6,15 +6,18 @@ add_executable(${NAME}
 
 # Pull in our pico_stdlib which pulls in commonly used features
 target_link_libraries(${NAME} 
-    pico_stdlib 
+    pico_stdlib
     pico_cyw43_arch_none
+    hardware_gpio
+    hardware_pio
     hardware_rtc
-    hardware_spi 
-    pico_rand 
-    pico_cyw43_driver  
+    pico_rand
+    pico_cyw43_driver
     hardware_flash 
     pico_bootrom
     mongoose
+    ds18b20pio
+    onboard_nvs
 )
 
 # create map/bin/hex file etc.

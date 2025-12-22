@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hot Water</title>
+    <title>Living Room Heating</title>
     <style>
     html {
       font-family: Arial;
@@ -25,7 +25,7 @@
 
     .top_nav {
       overflow: hidden;
-      background-color: #F4E7D4;
+      background-color: #00533F;
       color: black;
       font-size: 1rem;
     }
@@ -113,25 +113,18 @@
   </head>
   <body>
     <div class="top_nav">
-      <h1>Water Heating</h1>
+      <h1>Living Room Heating</h1>
     </div>
     <div class="content">
       <div class="cards">
-        <div class="card">
-          <h2 id="">
-            Boost
-          </h2>
-          <p>
-            <span id="boostTimer">-</span>
-            <br>
-            <button id="btnTrigger" class="" onclick="triggerBoost()">Boost</button>
-          </p>
-        </div>
+      <div class="cards">
         <div class="card">
           <h2 id="">
             Status
           </h2>
           <p>
+            &#x1F321; Now: <br>
+            <span style="font-size: larger"><span id="temperature">-</span> &deg;C</span><br>
             <span id="localTime">12:00 AM</span><br>
             <span id="heatingState">ENABLED</span> - <span id="isHeating">OFF</span>
             <br>
@@ -180,6 +173,11 @@
             <br>
             <input id="t1OffInput" oninput="moveTime(1, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
           </p>
+          <p>
+            Target: <span id="t1Target">24.0</span> &deg;C
+            <br>
+            <input id="t1TargetInput" oninput="moveTargetTemperature(1)" type="range" min="20" max="28" step="0.5" value="24" disabled>
+          </p>
         </div>
         <div class="card">
           <h2>
@@ -222,6 +220,11 @@
             OFF: <span id="t2Off">12:00 AM</span>
             <br>
             <input id="t2OffInput" oninput="moveTime(2, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
+          </p>
+          <p>
+            Target: <span id="t2Target">24.0</span> &deg;C
+            <br>
+            <input id="t2TargetInput" oninput="moveTargetTemperature(2)" type="range" min="20" max="28" step="0.5" value="24" disabled>
           </p>
         </div>
         <div class="card">
@@ -266,6 +269,11 @@
             <br>
             <input id="t3OffInput" oninput="moveTime(3, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
           </p>
+          <p>
+            Target: <span id="t3Target">24.0</span> &deg;C
+            <br>
+            <input id="t3TargetInput" oninput="moveTargetTemperature(3)" type="range" min="20" max="28" step="0.5" value="24" disabled>
+          </p>
         </div>
         <div class="card">
           <h2>
@@ -308,6 +316,11 @@
             OFF: <span id="t4Off">12:00 AM</span>
             <br>
             <input id="t4OffInput" oninput="moveTime(4, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
+          </p>
+          <p>
+            Target: <span id="t4Target">24.0</span> &deg;C
+            <br>
+            <input id="t4TargetInput" oninput="moveTargetTemperature(4)" type="range" min="20" max="28" step="0.5" value="24" disabled>
           </p>
         </div>
         <div class="card">
@@ -352,6 +365,11 @@
             <br>
             <input id="t5OffInput" oninput="moveTime(5, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
           </p>
+          <p>
+            Target: <span id="t5Target">24.0</span> &deg;C
+            <br>
+            <input id="t5TargetInput" oninput="moveTargetTemperature(5)" type="range" min="20" max="28" step="0.5" value="24" disabled>
+          </p>
         </div>
         <div class="card">
           <h2>
@@ -394,6 +412,11 @@
             OFF: <span id="t6Off">12:00 AM</span>
             <br>
             <input id="t6OffInput" oninput="moveTime(6, 'Off')" type="range" min="0" max="1410" step="15" value="0" disabled>
+          </p>
+          <p>
+            Target: <span id="t6Target">24.0</span> &deg;C
+            <br>
+            <input id="t6TargetInput" oninput="moveTargetTemperature(6)" type="range" min="20" max="28" step="0.5" value="24" disabled>
           </p>
         </div>
       </div>

@@ -13,12 +13,15 @@
 #include "pico/util/datetime.h"
 #include <time.h>
 #include "hardware/rtc.h"
-#include "NVSOnboard.h"
 
+#include "NVSOnboard.h"
+#include "DS18B20.h"
 #include "mongoose.h"
+
 #include "main.h"
 
 struct mg_mgr g_mgr;
+DS18B20 ds;
 
 // Used to determine if data needs to be sent on websocket
 // Set to true when:
@@ -37,10 +40,10 @@ struct s_status {
 	bool heating_state = false;
 	bool is_heating = false;
 	uint16_t timers[6][3] = {{127, 450, 390},{0, 420, 420},{0, 420, 420},{0, 420, 420},{0, 420, 420},{0, 420, 420}};
-	double timer_targets[6] = {20,20,20,20,20,20};
+	double timer_targets[6] = {24.0, 24.0, 24.0, 24.0, 24.0, 24.0};
 } g_status;
 
-uint16_t timer_counter = 0;
+uint16_t timer_counter = 15; // Start with counter at 15 so that temperature is read 15s later
 
 /***
  * Setup credentials for WiFi
@@ -81,23 +84,29 @@ static void one_second_timer(void *arg) {
 		state_changed = true;
 	}
 
-	double d_new_temperature = 0;
+	double d_new_temperature = 0.0;
 	// 30 seconds between temperature readings
-    if (timer_counter == 29) {
+    if (timer_counter == 0) {
         // Read temperature
-        //ds.convert_temp()
+		MG_INFO(("Running convert..."));
+        ds.convert();
+		MG_INFO(("Convert done"));
 	}
 	// 1 sec wait before reading result
-    if (counter == 30) {
+    if (timer_counter == 1) {
         // Read temperature conversion
-        //new_temperature = round(ds.read_temp(r), 2)
+		MG_INFO(("Getting DS18B20 result..."));
+        d_new_temperature = (double)ds.getTemperature();
+		MG_INFO(("Result: %g", d_new_temperature));
 		if (g_status.d_current_temperature != d_new_temperature) {
 			g_status.d_current_temperature = d_new_temperature;
 			state_changed = true;
 		}
-        // Reset counter
-        timer_counter = 0;
 	}
+	timer_counter++;
+	// Reset counter
+	if (timer_counter == 30)
+        timer_counter = 0;
 
 	// iterate through timers
     g_status.is_heating = false;
@@ -113,22 +122,26 @@ static void one_second_timer(void *arg) {
 						// if the current time is between the on and off times, enable heating
 						if (g_status.current_time >= g_status.timers[i][1] && g_status.current_time < g_status.timers[i][2]) {
 							// Turn on heating if temperature is 0.25 degrees below target
-							if ((g_status.d_current_temperature + 0.25) < g_status.timer_targets[i])
+							if ((g_status.d_current_temperature + 0.25) < g_status.timer_targets[i]) {
 								g_status.is_heating = true;
+							}
 							// Turn off heating if temperature is above target
-							if ((g_status.d_current_temperature) > g_status.timer_targets[i])
+							if ((g_status.d_current_temperature) > g_status.timer_targets[i]) {
 								g_status.is_heating = false;
+							}
 						}
 					} else {
 						// If off is before on
 						// if the current time is outside the on and off times, enable heating
 						if (g_status.current_time >= g_status.timers[i][1] || g_status.current_time < g_status.timers[i][2]) {
 							// Turn on heating if temperature is 0.25 degrees below target
-							if ((g_status.d_current_temperature + 0.25) < g_status.timer_targets[i])
+							if ((g_status.d_current_temperature + 0.25) < g_status.timer_targets[i]) {
 								g_status.is_heating = true;
+							}
 							// Turn off heating if temperature is above target
-							if ((g_status.d_current_temperature) > g_status.timer_targets[i])
+							if ((g_status.d_current_temperature) > g_status.timer_targets[i]){
 								g_status.is_heating = false;
+							}
 						}
 					}
 				}
@@ -146,7 +159,7 @@ static void one_second_timer(void *arg) {
 			MG_INFO(("WS Send"));
 
 			mg_ws_printf(c, WEBSOCKET_OP_TEXT, 
-				"{%m: %m, %m: %d, %m: %d, %m: %d, %m: %d, %m: %d,%m: [[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d]]}\n", 
+				"{%m: %m, %m: %d, %m: %d, %m: %d, %m: %d, %m: %g, %m: [[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g]]}\n", 
 				MG_ESC("status"), MG_ESC("OK"), MG_ESC("current_day"), g_status.current_day, MG_ESC("current_time"), g_status.current_time, 
 				MG_ESC("heating_state"), g_status.heating_state, MG_ESC("is_heating"), g_status.is_heating, 
 				MG_ESC("current_temperature"), g_status.d_current_temperature, MG_ESC("timers"), 
@@ -318,7 +331,7 @@ static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 				datetime_t dt;
 				rtc_get_datetime(&dt);
 				mg_http_reply(c, 200, "Content-Type: application/json\r\n", 
-					"{%m: %m, %m: %d, %m: %d, %m: %d, %m: %d, %m: %d,%m: [[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d],[%d, %d, %d, %d]]}\n", 
+					"{%m: %m, %m: %d, %m: %d, %m: %d, %m: %d, %m: %g, %m: [[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g],[%d, %d, %d, %g]]}\n", 
 					MG_ESC("status"), MG_ESC("OK"), MG_ESC("current_day"), g_status.current_day, MG_ESC("current_time"), g_status.current_time, 
 					MG_ESC("heating_state"), g_status.heating_state, MG_ESC("is_heating"), g_status.is_heating, 
 					MG_ESC("current_temperature"), g_status.d_current_temperature, MG_ESC("timers"), 
@@ -344,7 +357,7 @@ static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 				double d_new_days = 0.0;
 				double d_new_on_time = 0.0;
 				double d_new_off_time = 0.0;
-				double d_new_temp_target = 0.0;
+				double d_new_target = 0.0;
 				
 				if (!mg_json_get_num(hm->body, "$.timer_number", &d_timer_number)) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("No timer number"));
@@ -362,7 +375,7 @@ static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("No off time"));
 					return;
 				}
-				if (!mg_json_get_num(hm->body, "$.new_temp_target", &d_new_temp_target)) {
+				if (!mg_json_get_num(hm->body, "$.new_target", &d_new_target)) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("No temperature target"));
 					return;
 				}
@@ -382,16 +395,16 @@ static void http_ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("Invalid on time"));
 				} else if (new_off_time < 0 || new_off_time > 1410) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("Invalid off time"));
-				} else if (d_new_temp_target < 15 || d_new_temp_target > 30) {
+				} else if (d_new_target < 15 || d_new_target > 30) {
 					mg_http_reply(c, 400, "", "{%m: %m, %m: %m}\n", MG_ESC("status"), MG_ESC("ERROR"), MG_ESC("message"), MG_ESC("Invalid temperature target - must be from 15 to 30"));
 				} else {
 					g_status.timers[timer_number - 1][0] = new_days;
 					g_status.timers[timer_number - 1][1] = new_on_time;
 					g_status.timers[timer_number - 1][2] = new_off_time;
-					g_status.timer_targets[timer_number - 1] = d_new_temp_target;
+					g_status.timer_targets[timer_number - 1] = d_new_target;
 					save_data();
-					mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{%m: %m, %m: %d}",
-						MG_ESC("status"), MG_ESC("OK"), MG_ESC("timer_number"), timer_number, MG_ESC("new_days"), new_days, MG_ESC("new_on_time"), new_on_time, MG_ESC("new_off_time"), new_off_time
+					mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{%m: %m, %m: %d, %m: %d, %m: %d, %m: %d, %m: %g}",
+						MG_ESC("status"), MG_ESC("OK"), MG_ESC("timer_number"), timer_number, MG_ESC("new_days"), new_days, MG_ESC("new_on_time"), new_on_time, MG_ESC("new_off_time"), new_off_time, MG_ESC("new_target"), d_new_target
 					);
 					state_changed = true; 
 				}
@@ -455,6 +468,9 @@ int main(){
 
 	printf("Go\n");
 
+	// pio0 and pio1 are used by mongoose
+	ds = DS18B20(pio1, GPIO_ONEWIRE_DS18B20);
+
 	get_data();
 
 	// RTC init with default date and time
@@ -477,8 +493,8 @@ int main(){
 	MG_INFO(("Hardware initialised, starting firmware..."));
 	
 	// This blocks forever. Call it at the end of main()
-	g_mgr.ifp->dhcp_name = "heating";
 	mg_mgr_init(&g_mgr);      // Initialise event manager
+	memcpy(g_mgr.ifp->dhcp_name, "heating", 8);
 	mg_log_set(MG_LL_DEBUG);  // Set log level to debug
 	MG_INFO(("Starting HTTP listener"));
 	mg_http_listen(&g_mgr, HTTP_URL, http_ev_handler, NULL);

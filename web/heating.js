@@ -66,9 +66,9 @@ function updateStatus(strRequest) {
     if (json_response.status == "OK") {
         var dayOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         document.getElementById("localTime").innerHTML = dayOfWeek[json_response.current_day - 1] + " " + formatTime(json_response.current_time) + " UTC";
-        document.getElementById("boostTimer").innerHTML = formatCountdown(json_response.boost_timer_countdown);
         document.getElementById("heatingState").innerHTML = (json_response.heating_state ? "ENABLED" : "DISABLED");
         document.getElementById("isHeating").innerHTML = (json_response.is_heating ? "ON" : "OFF");
+        document.getElementById("temperature").innerHTML = Math.round((json_response.current_temperature + Number.EPSILON) * 100) / 100;
         if (!isChanging) {
             const timerArr = json_response.timers;
             var timer = 1;
@@ -84,6 +84,9 @@ function updateStatus(strRequest) {
                     // Off time
                     document.getElementById("t" + timer + "Off").innerHTML = formatTime(timerArr[i][2]);
                     document.getElementById("t" + timer + "OffInput").value = timerArr[i][2];
+                    // Target temperature
+                    document.getElementById("t" + timer + "Target").innerHTML = timerArr[i][3];
+                    document.getElementById("t" + timer + "TargetInput").value = timerArr[i][3];
                 }
             }
         }
@@ -122,29 +125,6 @@ function triggerHeating() {
     xhttp.send(JSON.stringify(jsonData));
 }
 
-// Set the target temperature
-function triggerBoost() {
-    const jsonData = {
-        "action": "boost"
-    };
-    // Post back to the python service
-    const xhttp = new XMLHttpRequest();
-    xhttp.onload = function() {
-        var json_response = JSON.parse(this.responseText);
-        console.log(json_response);
-
-        if (json_response.status == "OK") {
-            // reset led indicator to none
-            document.getElementById("boostTimer").innerHTML = formatCountdown(json_response.boost_timer_countdown);
-        } else {
-            alert("Error setting target temperature");
-        }
-    }
-    xhttp.open("POST", "/api", true);
-    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhttp.send(JSON.stringify(jsonData));
-}
-
 function checkTimerDayBoxes(timer, newTimerDays) {
     // Based on the binary days setting, check or uncheck each day checkbox
     bMask = 1; // Mask starts at 1, and is then left shifted in the loop
@@ -163,6 +143,10 @@ function moveTime(timer, onOrOff) {
     document.getElementById("t" + timer + onOrOff).innerHTML = formatTime(document.getElementById("t" + timer + onOrOff + "Input").value);
 }
 
+function moveTargetTemperature(timer) {
+    document.getElementById("t" + timer + "Target").innerHTML = document.getElementById("t" + timer + "TargetInput").value;
+}
+
 // Used by above functions to format the set time into 12h format hh:mm
 function formatTime(timeIn) {
     var hour = Math.floor(timeIn / 60)
@@ -172,11 +156,6 @@ function formatTime(timeIn) {
     if (hour > 12)
         hour -= 12
     return String(hour) + ":" + String(timeIn % 60).padStart(2, "0") + ampm;
-}
-
-// Used by above functions to format the boost countdown into mm:ss format
-function formatCountdown(countdownIn) {
-    return String(Math.floor(countdownIn / 60)).padStart(2, "0") + ":" + String(countdownIn % 60).padStart(2, "0");
 }
 
 function editTimer(timer) {
@@ -206,7 +185,8 @@ function editTimer(timer) {
             "timer_number": timer,
             "new_days": newDays,
             "new_on_time": +document.getElementById("t" + timer + "OnInput").value,
-            "new_off_time": +document.getElementById("t" + timer + "OffInput").value
+            "new_off_time": +document.getElementById("t" + timer + "OffInput").value,
+            "new_target": +document.getElementById("t" + timer + "TargetInput").value
         };
         // Post back to the python service
         const xhttp = new XMLHttpRequest();
@@ -253,6 +233,8 @@ function toggleControlsDisabled(timer, isDisabled) {
     document.getElementById("t" + timer + "OffInput").disabled = isDisabled;
     // On time
     document.getElementById("t" + timer + "OnInput").disabled = isDisabled;
+    // Target
+    document.getElementById("t" + timer + "TargetInput").disabled = isDisabled;
 }
 
 // These events will start the server side event source to stream status
