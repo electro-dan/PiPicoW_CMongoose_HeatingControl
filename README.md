@@ -7,7 +7,7 @@ To clone
 
 Change mongoose to specific tag as master may be unstable
 
-    cd ~/GIT/lib/mongoose/
+    cd ~/GIT/PiPicoW_CMongoose_HeatingControl/lib/mongoose/
     git fetch
     git checkout 7.19
 
