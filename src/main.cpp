@@ -148,7 +148,9 @@ static void one_second_timer(void *arg) {
 			}
 		}
 	}
-	
+
+	// Output heating status to pin
+	gpio_put(GPIO_HEATING_TRIG, g_status.is_heating);
 	
 	// If status changed, send web socket
 	if (state_changed) {
@@ -245,8 +247,8 @@ static void get_data() {
 		}
 	}
 	if (is_there_data)	{
-		if (nvs->contains("is_heating")) {
-			nvs->get_bool("is_heating", &g_status.is_heating);
+		if (nvs->contains("heating_state")) {
+			nvs->get_bool("heating_state", &g_status.heating_state);
 		}
 		MG_INFO(("Data read from flash"));
 	} else {
@@ -272,7 +274,7 @@ static void save_data() {
 		nvs->set_double(key, g_status.timer_targets[i]);
 	}
 	
-	nvs->set_bool("is_heating", g_status.is_heating);
+	nvs->set_bool("heating_state", g_status.heating_state);
 
 	nvs->commit();
 

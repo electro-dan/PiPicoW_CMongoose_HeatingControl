@@ -75,16 +75,17 @@ Above is for Linux/Mac. Windows would use ninja, for example.
 
 For first time code, hold BOOTSEL button on Pico whilst connecting to USB. Once code if flashed first time, picotool can then force a reboot into bootsel mode without having to hold this button each time.
 
-Forcing a complete rebuild if cmake / make complains:
+Forcing a complete rebuild if cmake / make complains, from inside build (cd ~/GIT/PiPicoW_CMongoose_HeatingControl/build):
 
     cd .. && rm -r build && mkdir build && cd build
 
-To build the file system (html and js files inside web):
+To build the web file system (html and js files inside web):
 
     cd ~/GIT/PiPicoW_CMongoose_HeatingControl
     lib/mongoose/test/pack web/* > src/fs.c
-
-Then run make and make install again.
+    cd ~/GIT/PiPicoW_CMongoose_HeatingControl/build
+    make
+    make install
 
 Bug list
 - Not reconnecting after whole home power cut
