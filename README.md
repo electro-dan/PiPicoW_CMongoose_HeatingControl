@@ -23,7 +23,7 @@ To clone, assuming you put projects in a 'GIT' subfolder inside home:
 
 Linux Ubuntu/Debian users dependencies:
 
-    sudo apt install cmake python3 build-essential gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+    sudo apt install cmake python3 build-essential gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib libusb-1.0-0-dev
 
 You also need pico-sdk and picotool.
 
@@ -50,7 +50,7 @@ Change mongoose to specific tag as master may be unstable
 
     cd ~/GIT/PiPicoW_CMongoose_HeatingControl/lib/mongoose/
     git fetch
-    git checkout 7.19
+    git checkout 7.20
 
 For first time file after clone or update mongoose, pack needs to be built:
     
@@ -86,6 +86,13 @@ To build the web file system (html and js files inside web):
     cd ~/GIT/PiPicoW_CMongoose_HeatingControl/build
     make
     make install
+
+To see messages via USB serial (via MG_INFO), Linux users can use minicom. Ubuntu or derivatives should add their user to dialout if not already done:
+
+    sudo adduser $USER dialout
+    sudo apt install minicom
+    
+    minicom -b 115200 -o -D /dev/ttyACM0
 
 Bug list
 - Not reconnecting after whole home power cut
