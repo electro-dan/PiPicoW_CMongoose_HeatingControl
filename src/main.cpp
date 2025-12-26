@@ -45,14 +45,26 @@ struct s_status {
 
 uint16_t timer_counter = 15; // Start with counter at 15 so that temperature is read 15s later
 
-/***
- * Setup credentials for WiFi
- * @param data
- */
-void main_setconfig(void *data) {
-	struct mg_tcpip_driver_pico_w_data *d = (struct mg_tcpip_driver_pico_w_data *)data;
-	d->ssid = (char *)WIFI_SSID;
-	d->pass = (char *)WIFI_PASS;
+
+static void mif_fn(struct mg_tcpip_if *ifp, int ev, void *ev_data) {
+  	// TODO(): should we include this inside ifp ? add an fn_data ?
+	if (ev == MG_TCPIP_EV_ST_CHG) {
+		MG_INFO(("State change: %u", *(uint8_t *) ev_data));
+	}
+	// After a disconnection (simulation 2/2), you could retry
+    if (ev == MG_TCPIP_EV_ST_CHG && *(uint8_t *) ev_data == MG_TCPIP_STATE_DOWN) {
+        struct mg_wifi_data *wifi = &((struct mg_tcpip_driver_pico_w_data *) ifp->driver_data)->wifi;
+        MG_INFO(("Disconnected"));
+        bool res = mg_wifi_connect(wifi);
+        MG_INFO(("Manually connecting: %s", res ? "OK":"FAIL"));
+	}
+}
+
+void wifi_setconfig(void *data) {
+	struct mg_tcpip_driver_pico_w_data *d = (struct mg_tcpip_driver_pico_w_data *) data;
+	struct mg_wifi_data *wifi = &d->wifi;
+	wifi->ssid = (char *)WIFI_SSID;
+	wifi->pass = (char *)WIFI_PASS;
 }
 
 /***
@@ -496,7 +508,11 @@ int main(){
 	
 	// This blocks forever. Call it at the end of main()
 	mg_mgr_init(&g_mgr);      // Initialise event manager
+
+  	// Host name
 	memcpy(g_mgr.ifp->dhcp_name, "heating", 8);
+	g_mgr.ifp->fn = mif_fn;
+
 	mg_log_set(MG_LL_DEBUG);  // Set log level to debug
 	MG_INFO(("Starting HTTP listener"));
 	mg_http_listen(&g_mgr, HTTP_URL, http_ev_handler, NULL);
