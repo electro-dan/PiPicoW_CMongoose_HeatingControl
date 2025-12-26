@@ -51,13 +51,6 @@ static void mif_fn(struct mg_tcpip_if *ifp, int ev, void *ev_data) {
 	if (ev == MG_TCPIP_EV_ST_CHG) {
 		MG_INFO(("State change: %u", *(uint8_t *) ev_data));
 	}
-	// After a disconnection (simulation 2/2), you could retry
-    if (ev == MG_TCPIP_EV_ST_CHG && *(uint8_t *) ev_data == MG_TCPIP_STATE_DOWN) {
-        struct mg_wifi_data *wifi = &((struct mg_tcpip_driver_pico_w_data *) ifp->driver_data)->wifi;
-        MG_INFO(("Disconnected"));
-        bool res = mg_wifi_connect(wifi);
-        MG_INFO(("Manually connecting: %s", res ? "OK":"FAIL"));
-	}
 }
 
 void wifi_setconfig(void *data) {
@@ -199,9 +192,11 @@ static void net_check_timer(void *arg) {
 	/* check state */
 	//MG_INFO(("State: %d", g_mgr.ifp->state));
 	if (g_mgr.ifp->state == MG_TCPIP_STATE_DOWN) {
-		// If interface is down, change it to MG_TCPIP_STATE_REQ, next run of this timer will bring it down and request connection again
-		g_mgr.ifp->state = MG_TCPIP_STATE_REQ;
-		MG_INFO(("State was MG_TCPIP_STATE_DOWN, reset state to MG_TCPIP_STATE_REQ"));
+		// If interface is down, request connection again
+		struct mg_wifi_data *wifi = &((struct mg_tcpip_driver_pico_w_data *) g_mgr.ifp->driver_data)->wifi;
+        MG_INFO(("Disconnected"));
+        bool res = mg_wifi_connect(wifi);
+        MG_INFO(("Manually connecting: %s", res ? "OK":"FAIL"));
 	} else if (g_mgr.ifp->state == MG_TCPIP_STATE_REQ) {
 		// Reset interface status to down, mg_tcpip_poll will cause a reconnect
 		g_mgr.ifp->state = MG_TCPIP_STATE_DOWN;
