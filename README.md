@@ -54,7 +54,7 @@ Change mongoose to specific tag as master may be unstable
 
 For first time file after clone or update mongoose, pack needs to be built:
     
-    cd ~/GIT/PiPicoW_CMongoose_HotWaterTimer/lib/mongoose/test/
+    cd ~/GIT/PiPicoW_CMongoose_HeatingControl/lib/mongoose/test/
     make pack
 
 To build, set variables first:
@@ -77,6 +77,7 @@ For first time code, hold BOOTSEL button on Pico whilst connecting to USB. Once 
 
 Forcing a complete rebuild if cmake / make complains, from inside build (cd ~/GIT/PiPicoW_CMongoose_HeatingControl/build):
 
+    cd ~/GIT/PiPicoW_CMongoose_HeatingControl
     cd .. && rm -r build && mkdir build && cd build
 
 To build the web file system (html and js files inside web):
@@ -93,7 +94,4 @@ To see messages via USB serial (via MG_INFO), Linux users can use minicom. Ubunt
     sudo apt install minicom
     
     minicom -b 115200 -o -D /dev/ttyACM0
-
-Bug list
-- Not reconnecting after whole home power cut
 
