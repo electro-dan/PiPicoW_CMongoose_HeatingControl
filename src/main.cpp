@@ -119,7 +119,7 @@ static void one_second_timer(void *arg) {
     if (g_status.heating_state) {
 		for (char i = 0; i < 6; i++) {
 			// if timer is enabled for today (bitwise AND)
-			if (g_status.current_day & g_status.timers[i][0]) {
+			if (1 << (g_status.current_day - 1) & g_status.timers[i][0]) {
 				// if the on and off timer are not the same
 				if (g_status.timers[i][1] != g_status.timers[i][2]) {
 					if (g_status.timers[i][1] < g_status.timers[i][2]) {
@@ -505,7 +505,7 @@ int main(){
 	mg_mgr_init(&g_mgr);      // Initialise event manager
 
   	// Host name
-	memcpy(g_mgr.ifp->dhcp_name, "heating", 8);
+	memcpy(g_mgr.ifp->dhcp_name, "heatin2", 8);
 	g_mgr.ifp->fn = mif_fn;
 
 	mg_log_set(MG_LL_DEBUG);  // Set log level to debug
